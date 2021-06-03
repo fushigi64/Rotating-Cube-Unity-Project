@@ -17,13 +17,13 @@ public class Events : MonoBehaviour {
     GameObject canvas;
     GameObject DebugPanel;
     InputField inputField;
+    Dropdown dropdown;
     void Start() {
         gameManeger = GameObject.FindWithTag("MainCamera").GetComponent<GameManeger>();
         //board = gameManeger.board;
         board = GameObject.FindWithTag("Stage").GetComponent<Board>();
         canvas = transform.parent.gameObject;
-        DebugPanel = canvas.transform.Find("DebugPanel").gameObject;
-        inputField = DebugPanel.transform.Find("InputField").GetComponent<InputField>();
+        
     }
 
     void Update() {
@@ -35,8 +35,9 @@ public class Events : MonoBehaviour {
         board.BoardCubeRandomFlick();
     }
     public void DebugOnClick() {
-        
+
         /*toggle*/
+        DebugPanel = canvas.transform.Find("DebugPanel").gameObject;
         DebugPanel.gameObject.SetActive(!DebugPanel.activeSelf);
 
     }
@@ -73,10 +74,33 @@ public class Events : MonoBehaviour {
     }
 
     public void TetsInputEnd() {
+        inputField = DebugPanel.transform.Find("InputField").GetComponent<InputField>();
         Debug.Log("inputEnd");
         string text = inputField.text;
         inputField.text = "";
-        board.DeleteHoge(Convert.ToInt32(text));
+        /*
+        if (text.Substring(0, 4) == "size") {
+
+        }
+        char a = text[0];
+        char b = text[1];
+        //board.boardSizeX
+        */
+        //board.DeleteHoge(Convert.ToInt32(text));
+    }
+    public void DropDownChange() {
+        if (this.name == "Dropdown") {
+            /*  Puzzle,
+                SixSides,
+                Coldness
+            */
+            gameManeger.gameMode = (GameMode)this.GetComponent<Dropdown>().value;
+        } else if (this.name=="DropdownX") {
+            board.boardSizeX = this.GetComponent<Dropdown>().value + 2;
+        } else if (this.name == "DropdownY") {
+            board.boardSizeY = this.GetComponent<Dropdown>().value + 2;
+        }
+        
     }
 }
 

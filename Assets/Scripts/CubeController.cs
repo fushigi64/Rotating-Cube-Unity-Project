@@ -15,19 +15,27 @@ public class CubeController : MonoBehaviour {
 
     Animator animator;
     GameObject AnimeCube;
-    float add = 0;
+
+    ParticleSystem particle;
+    //float add = 0;
+    public enum CubeState : int {
+        plane,
+        fall,
+        effect
+    }
 
     private void Start() {
         
         AnimeCube = this.transform.GetChild(0).gameObject;
         animator = AnimeCube.GetComponent<Animator>();
+        particle = this.GetComponent<ParticleSystem>();
     }
     public CubeController() {
 
     }
     void Awake() {
         //animator = GetComponent<Animator>();
-        add = 0;
+        //add = 0;
     }
     float goalPosY;
     void Update() {
@@ -42,7 +50,7 @@ public class CubeController : MonoBehaviour {
                 //Debug.Log("-----hasFall = false----");
                 
                 hasFall = false;
-                add = 0;
+                //add = 0;
             }
 
         } else {
@@ -83,10 +91,18 @@ public class CubeController : MonoBehaviour {
     }
 
     public void Fall(Vector3 ePos) {
-        Debug.Log("call fall in cc  epos:"+ePos);
+        //Debug.Log("call fall in cc  epos:"+ePos);
         endPos = ePos;
         hasFall = true;
         //isGeneSoon = false;
+    }
+
+    public void PlayParticle() {
+       
+        particle.Play();
+    }
+    public void DisappearSmall() {
+        AnimeCube.GetComponent<Animator>().Play("DisappearSmallAnimation");
     }
 }
 

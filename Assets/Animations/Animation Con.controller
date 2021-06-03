@@ -612,7 +612,7 @@ AnimatorStateMachine:
     m_Position: {x: 950, y: 570, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 1814367572693736378}
-    m_Position: {x: 730, y: 510, z: 0}
+    m_Position: {x: 730, y: 520, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -4703417176424900287}
     m_Position: {x: 600, y: 450, z: 0}
@@ -628,6 +628,9 @@ AnimatorStateMachine:
   - serializedVersion: 1
     m_State: {fileID: 6993800629803132686}
     m_Position: {x: 540, y: 260, z: 0}
+  - serializedVersion: 1
+    m_State: {fileID: 3913270778388957548}
+    m_Position: {x: 224.0708, y: 544.8551, z: 0}
   m_ChildStateMachines: []
   m_AnyStateTransitions: []
   m_EntryTransitions: []
@@ -638,6 +641,32 @@ AnimatorStateMachine:
   m_ExitPosition: {x: 390, y: -170, z: 0}
   m_ParentStateMachinePosition: {x: 800, y: 20, z: 0}
   m_DefaultState: {fileID: 9024352468504837076}
+--- !u!1102 &3913270778388957548
+AnimatorState:
+  serializedVersion: 6
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: DisappearSmallAnimation
+  m_Speed: 1
+  m_CycleOffset: 0
+  m_Transitions: []
+  m_StateMachineBehaviours: []
+  m_Position: {x: 50, y: 50, z: 0}
+  m_IKOnFeet: 0
+  m_WriteDefaultValues: 0
+  m_Mirror: 0
+  m_SpeedParameterActive: 0
+  m_MirrorParameterActive: 0
+  m_CycleOffsetParameterActive: 0
+  m_TimeParameterActive: 0
+  m_Motion: {fileID: 7400000, guid: 792dea639ca5c684bb73f81eefd165ca, type: 2}
+  m_Tag: 
+  m_SpeedParameter: 
+  m_MirrorParameter: 
+  m_CycleOffsetParameter: 
+  m_TimeParameter: 
 --- !u!1102 &4203796565588885647
 AnimatorState:
   serializedVersion: 6

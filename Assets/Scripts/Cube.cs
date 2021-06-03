@@ -6,7 +6,7 @@ public class Cube {
     public GameObject generateCube;
     public GameObject animeCube; //todo ここ整理
     public bool isAnimeCubeAvailable = true;
-    public bool isCheckedCube = false;
+    public bool isCheckedCube = false; //todo スコープ狭く
     public Quaternion rotSave = new Quaternion(0, 0, 0, 0);
     public DiceData diceData = new DiceData();
     public int fallAmount = 0;
@@ -15,9 +15,8 @@ public class Cube {
     
     public CubeController CubeCon;
 
-    public bool cubeFallTest = true;
 
-    public Cube(int type){ //TODO overload???
+    public Cube(int type){ //TODO overload??? 生成時の設定
         if (type != 0) {
             switch (type) {//TODO Add type
                 case 0:
@@ -33,9 +32,11 @@ public class Cube {
         isCheckedCube = false;
     }
 
-    public class DiceData{
-        public int upNum = 0, downNum = 5, fNum = 1, backNum = 4, leftNum = 3, rightNum = 2;
-        //public int upNum = 0, downNum = 5, frontNum = 1, backNum = 1, leftNum = 3, rightNum = 2;
+    public class DiceData {
+        public DiceData() { //TODO overload???
+        }
+        public int upNum = 0, downNum = 5, fNum = 1, backNum = 4, leftNum = 3, rightNum = 2; //logChange
+        //public int upNum = 0, downNum = 5, fNum = 1, backNum = 1, leftNum = 3, rightNum = 2; 
         public void rotationDataMove(Direction toMove) {
             int uWork, dWork, fWork, bWork, lWork, rWork;
             switch (toMove) {
@@ -84,6 +85,10 @@ public class Cube {
                     backNum = lWork;
                     break;
             }
+        }
+        public void init() {
+            //upNum = 0; downNum = 5; fNum = 1; backNum = 1; leftNum = 3; rightNum = 2;
+            upNum = 0; downNum = 5; fNum = 1; backNum = 4; leftNum = 3; rightNum = 2;
         }
     }
 
@@ -139,25 +144,7 @@ public class Cube {
     public void FallCube(Vector3 tPos) { //todo Vector3を引数にするべき??
         // It doesn't have to be generateCube to move
         //Vector3 tPos = board.cubePositions[i, j];
-        // Vector3 tPos = targetCube.generateCube.transform.position;
         this.CubeCon.Fall(tPos);
-        //TODO epos 代入？？
-        //this.CubeDataMove(GameManeger.board.cubes[i,j]);
-
-        this.fallAmount = 0;
-    }
-
-    public void CubeDataMove(Cube target) {
-        target.generateCube = this.generateCube;
-        target.animeCube = this.animeCube;
-        target.isAnimeCubeAvailable = this.isAnimeCubeAvailable;
-        target.isCheckedCube = this.isCheckedCube;
-        target.rotSave = this.rotSave;
-        target.fallAmount = 0; //todo
-        // posX posY はswapの必要ない 
-        target.diceData = this.diceData;
-
-        target.CubeCon = this.CubeCon;
     }
 
     public static void CubeDataExchange(Cube t1, Cube t2) {
@@ -202,14 +189,13 @@ public class Cube {
         fallAmount = 0;
         this.InitRotation();
     }
-
     public void InitRotation() {
-        this.rotSave = new Quaternion(0, 0, 0, 0);
+        this.rotSave = new Quaternion(0, 0, 0, 0); //todo make init
         this.generateCube.transform.rotation = rotSave;
         this.animeCube.transform.rotation = rotSave;
-        this.diceData = new DiceData();
+        this.diceData.init();
+        //upNum = 0, downNum = 5, fNum = 1, backNum = 4, leftNum = 3, rightNum = 2;
     }
-
     public void CubeRandomDirction() {
 
         int t = UnityEngine.Random.Range(3,7);

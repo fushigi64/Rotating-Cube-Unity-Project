@@ -7,12 +7,12 @@ public enum Direction : int {
     Right = 1,
     Down = 2,
     Left = 3,
+    None = 4
 }
 
 public class Board : MonoBehaviour {
     public int boardSizeX = 7;
     public int boardSizeY = 7;
-    public int rangeForGene;
     public Cube[,] cubes;
     public Vector3[,] cubePositions;
     public bool[] isFallColumn;
@@ -30,39 +30,50 @@ public class Board : MonoBehaviour {
 
     public PointUIController pointUI;
 
-    bool onetime = true;
+    public GameObject[,] particle;
+    public GameObject[,] starParticle;
+
     //TODO いつ呼ばれるか調べる
     public Board (){
-        cubes = new Cube[boardSizeX, boardSizeY];
-
-        rangeForGene = boardSizeY;//Debug.Log("Created Board Instans ");
+        cubes = new Cube[boardSizeX, boardSizeY];//Debug.Log("Created Board Instans ");
         deleteCount = new int[boardSizeX];
-
-        
     }
-    public void FieldPreparation() {
+    public void FieldPreparation(GameMode gm) {
         pointUI = GameObject.Find("PointUI").GetComponent<PointUIController>();
         isFallColumn = new bool[boardSizeX];
         cubes = new Cube[boardSizeX, boardSizeY];
-        cubePositions = new Vector3[boardSizeX, boardSizeY + +boardSizeY]; //todo fix
+        cubePositions = new Vector3[boardSizeX, boardSizeY + boardSizeY]; //todo fix
+
+        particle = new GameObject[boardSizeX, boardSizeY];
+        starParticle = new GameObject[boardSizeX, boardSizeY];
         for (int i = 0; i < boardSizeX; i++) {
-            // 変更してみた idea002
-            for (int j = 0; j < boardSizeY + boardSizeY; j++) { // + boardSizeY
+            
+            for (int j = 0; j < boardSizeY + boardSizeY; j++) {
                 Vector3 pos = Logics.CalculateGenePos(i, j);
                 cubePositions[i, j] = pos;
                 if (j < boardSizeY) {
-                    GenerateOneCube(i, j, pos, cubeSize);
+                    particle[i, j] = Instantiate(GameManeger.particleObjPrefabs, new Vector3(pos.x, pos.y, pos.z), Quaternion.identity) as GameObject;
+                    starParticle[i, j] = Instantiate(GameManeger.starParticleObjPrefabs, new Vector3(pos.x, pos.y, pos.z), Quaternion.identity) as GameObject;
+                    GenerateOneCube(i, j, pos, cubeSize,gm);
                 }
+                
+
             }
         }
         
     }
-    public void GenerateOneCube(int i, int j, Vector3 pos, float cubeSize) { //TODO??
+    public void GenerateOneCube(int i, int j, Vector3 pos, float cubeSize,GameMode gm) { //TODO??
         cubes[i, j] = new Cube();
         cubes[i, j].generateCube = Instantiate(GameManeger.generateCubePrefabs, pos, Quaternion.identity) as GameObject;
         cubes[i, j].animeCube = cubes[i, j].generateCube.transform.GetChild(0).gameObject;
-        cubes[i, j].animeCube.transform.GetChild(0).localScale = new Vector3(cubeSize, cubeSize, cubeSize);
-        cubes[i, j].rotSave = cubes[i, j].animeCube.transform.rotation;  //Debug.Log(3 / (float)size);
+        if (gm == GameMode.Coldness) {
+            cubes[i, j].animeCube.transform.GetChild(0).localScale = new Vector3(cubeSize * 0.94f, cubeSize * 0.94f, cubeSize * 1.06f); //Change size of sizeCube LogChange
+        } else {
+            cubes[i, j].animeCube.transform.GetChild(0).localScale = new Vector3(cubeSize,cubeSize,cubeSize);
+        }
+        
+        //cubes[i, j].animeCube.transform.GetChild(0).localScale = new Vector3(cubeSize, cubeSize, cubeSize);
+        cubes[i, j].rotSave = cubes[i, j].animeCube.transform.rotation;//todo necessary?
         cubes[i, j].posX = i;
         cubes[i, j].posY = j;
         cubes[i, j].CubeCon = cubes[i, j].generateCube.GetComponent<CubeController>();
@@ -71,11 +82,6 @@ public class Board : MonoBehaviour {
 
         cubes[i, j].CubeCon.i = i;
         cubes[i, j].CubeCon.j = j;
-        // idea002
-        /*
-        if (j >= boardSizeY) {
-            cubes[i, j].generateCube.SetActive(false);
-        }*/
     }
 
     public bool isAllSameColor() {
@@ -226,52 +232,38 @@ public class Board : MonoBehaviour {
 
     public void MoveCube() {
 
-        InitIsCheckedCube(boardSizeX, boardSizeY);
-        bool k = CanDeleteAndSearch(boardSizeX, boardSizeY); //true;// 
-        if (k) {
-            Debug.Log("move cube process");
-            //Corou1();
-            DeleteStackedCube();
-
-            Fall();
-            AllisAnimeCubeAvailableAndisCheckedCubeInit();
-            
-            
-        } else {
-            //Debug.Log("become plane");
-            GameManeger.gameState = GameState.plane;
+        //DeleteStackedCube();
+        Fall();
+        AllisAnimeCubeAvailableAndisCheckedCubeInit();
+    }
+    public bool HasFallCube() {
+        for (int i = 0; i < boardSizeX; i++) {
+            for (int j = 0; j < boardSizeY; j++) {
+                if (cubes[i, j].CubeCon.hasFall == true) { //
+                    return true;
+                }
+            }
         }
-
-        //InitIsCheckedCube(boardSizeX, boardSizeX);
+        return false;
     }
 
-    public void TestMoveCube() {
-
-    }
-
-    public  void ClickPosdelete(int x,int y) {
-        if (x!=0&&y!=0) {
-            cubes[x, y].isCheckedCube = true;
-            deleteCubeX.Push(x);
-            deleteCubeY.Push(y);
-        }
-    }
-
-    public void DeleteHoge(int y) {
-        deleteCubeX.Push(0);
-        deleteCubeY.Push(y);
-    }
-
-    public bool CanDeleteAndSearch(int sizeX, int sizeY) {
+    public bool CanDeleteAndSearch(int sizeX, int sizeY ,GameMode gm) {
         
         bool searchResult = false;  //Debug.Log("Search start");
         for (int i = 0; i < sizeX; i++) {
             for (int j = 0; j < sizeY; j++) {
                 int cnt = 0;
-
-                if (!cubes[i, j].isCheckedCube && cubes[i, j].isAnimeCubeAvailable) { // && cubes[i, j].diceData.frontNum ==1
-                    RecursionSearch(sizeX, sizeY, cubes, i, j, cubes[i, j].diceData.fNum, ref cnt);
+                if (gm == GameMode.Coldness) {
+                    
+                    if (!cubes[i, j].isCheckedCube && cubes[i, j].isAnimeCubeAvailable && (cubes[i, j].diceData.fNum == 1 || cubes[i, j].diceData.fNum == 4)) { // && cubes[i, j].diceData.fNum ==1 //LogChange
+                        RecursionSearch2(sizeX, sizeY, cubes, i, j, ref cnt);
+                    }
+                } else {
+                    if (!cubes[i, j].isCheckedCube && cubes[i, j].isAnimeCubeAvailable) { // && cubes[i, j].diceData.fNum ==1 //LogChange
+                        RecursionSearch(sizeX, sizeY, cubes, i, j, cubes[i, j].diceData.fNum, ref cnt);
+                    }
                 }
+
                 if (cnt < GameSettings.deletableNumber) { //TODO ここのロジック改善
                     for (int k = 0; k < cnt; k++) {
                         int x = deleteCubeX.Pop();
@@ -281,7 +273,6 @@ public class Board : MonoBehaviour {
                 } else {
                     searchResult = true; //Debug.Log("xxxxxxxxxxxxxx  cnt>=4--------cnt:" + cnt + ",x:" + i + ",y:" + j);
                 }
-
             }
         }
         return searchResult;
@@ -292,7 +283,6 @@ public class Board : MonoBehaviour {
         cubes[x, y].isCheckedCube = true;
         deleteCubeX.Push(x);
         deleteCubeY.Push(y);
-        //cubes[x, y].isAnimeCubeExists = false;  //Debug.Log("log,x:"+x+",y:"+y+"color:"+cubes[x,y].diceData.frontNum);
         if (x + 1 < sizeX && cubes[x + 1, y].diceData.fNum == diceNum && !cubes[x + 1, y].isCheckedCube && cubes[x + 1, y].isAnimeCubeAvailable) {
             RecursionSearch(sizeX, sizeY, cubes, x + 1, y, diceNum, ref cnt);
         }
@@ -306,15 +296,29 @@ public class Board : MonoBehaviour {
             RecursionSearch(sizeX, sizeY, cubes, x, y - 1, diceNum, ref cnt);
         }
     }
-    
+    public void RecursionSearch2(int sizeX, int sizeY, Cube[,] cubes, int x, int y, ref int cnt) {
+        cnt++;
+        cubes[x, y].isCheckedCube = true;
+        deleteCubeX.Push(x);
+        deleteCubeY.Push(y);
+        if (x + 1 < sizeX && (cubes[x + 1, y].diceData.fNum == 1 || cubes[x + 1, y].diceData.fNum == 4) && !cubes[x + 1, y].isCheckedCube && cubes[x + 1, y].isAnimeCubeAvailable) {
+            RecursionSearch2(sizeX, sizeY, cubes, x + 1, y, ref cnt);
+        }
+        if (0 <= x - 1 && (cubes[x - 1, y].diceData.fNum == 1 || cubes[x - 1, y].diceData.fNum == 4) && !cubes[x - 1, y].isCheckedCube && cubes[x - 1, y].isAnimeCubeAvailable) {
+            RecursionSearch2(sizeX, sizeY, cubes, x - 1, y, ref cnt);
+        }
+        if (y + 1 < sizeY && (cubes[x, y+1].diceData.fNum == 1 || cubes[x , y + 1].diceData.fNum == 4) && !cubes[x, y + 1].isCheckedCube && cubes[x, y + 1].isAnimeCubeAvailable) {
+            RecursionSearch2(sizeX, sizeY, cubes, x, y + 1, ref cnt);
+        }
+        if (0 <= y - 1 && (cubes[x, y - 1].diceData.fNum == 1 || cubes[x, y - 1].diceData.fNum == 4) && !cubes[x, y - 1].isCheckedCube && cubes[x, y - 1].isAnimeCubeAvailable) {
+            RecursionSearch2(sizeX, sizeY, cubes, x, y - 1, ref cnt);
+        }
+    }
+
     /* Destoroy以外の方法  Stackを指定して疎結合?*/
     public void DeleteStackedCube() {
 
         Logics.ArrayInit(deleteCount, 0);
-        /*
-        for (int i=0;i<boardSizeX;i++) {
-            deleteCount[i] = 0;
-        }*/
         while (deleteCubeX.Count>0) {
             int x = deleteCubeX.Pop();
             int y = deleteCubeY.Pop();
@@ -328,19 +332,22 @@ public class Board : MonoBehaviour {
                     }
                 }
             }*/
-            for (int number = y + 1; number < boardSizeY; number++) {
+            for (int num = y + 1; num < boardSizeY; num++) {
 
-                if (cubes[x, number].isAnimeCubeAvailable) {
-                    Debug.Log("fallamt++");
-                    cubes[x, number].fallAmount++;
+                if (cubes[x, num].isAnimeCubeAvailable) {
+                    cubes[x, num].fallAmount++;
                 }
             }
-            //cubes[x, y].animeCube.transform.GetChild(0).localScale = new Vector3(0.3f, 0.3f, 0.3f);
-            //TODO_01
-            cubes[x, y].generateCube.transform.localPosition = new Vector3(-2, 0, 0);
-            cubes[x, y].animeCube.SetActive(false);
-            Debug.Log("SetActive   false");
             
+            /* Animation によって小さくなったままの場合がある */
+            cubes[x, y].animeCube.gameObject.transform.localScale = new Vector3(1,1,1);
+            //TODO_01
+            cubes[x, y].CubeCon.DisappearSmall();
+            StartCoroutine("Corou1", (cubes[x, y]));
+            //Debug.Log("SetActive   false");
+            particle[x, y].GetComponent<ParticleSystem>().Play();
+            starParticle[x, y].GetComponent<ParticleSystem>().Play();
+
             cubes[x, y].isAnimeCubeAvailable = false;
             deleteCount[x]++;  //Debug.Log("x:" + x + " ,gene++" + gene[x]);
             points++;
@@ -354,14 +361,21 @@ public class Board : MonoBehaviour {
             for (int j=1;j < boardSizeY; j++) {
                 if (cubes[i,j].fallAmount>0) {
                     fallCubes.Enqueue(cubes[i,j]);
-                    Debug.Log("Enque x:"+i+",y:"+j);
                 }
             }
         }
 
 
     }
-    
+    IEnumerator Corou1(Cube cube) {
+
+        yield return new WaitForSeconds(0.21f);
+        //Debug.Log("Corou1--------");
+        cube.animeCube.transform.localScale = new Vector3(1, 1, 1);
+        cube.animeCube.SetActive(false);
+        //SliderCon.slider.value += 0.1f;
+    }
+
     public void Fall() {
         int fallAmount = 0;
 
@@ -369,12 +383,11 @@ public class Board : MonoBehaviour {
 
             Cube cubeU = fallCubes.Dequeue();
             fallAmount = cubeU.fallAmount;
-            //Debug.Log("fa");
             int x = cubeU.posX;
             int y = cubeU.posY;
             Cube cubeD = cubes[x, y - fallAmount];
             
-            Debug.Log("  fallCube:   x:"+x+",y:"+(y-fallAmount)+"fallamt="+fallAmount);
+            //Debug.Log("  fallCube:   x:"+x+",y:"+(y-fallAmount)+"fallamt="+fallAmount);
             /*
             cubeU.FallCube(cubePositions[x, y - fallAmount]);
             cubeU.isAnimeCubeAvailable = false;
@@ -409,28 +422,26 @@ public class Board : MonoBehaviour {
             for (int j = 1; j <= deleteCount[i]; j++) {
 
                 int thisY = (boardSizeY - 1) + j; //Debug.Log("i:" + i + ",j:" + j + ",gene[i]:" + gene[i]);
-                int fallAmt = deleteCount[i];
-                Debug.Log("  thisY - fallAmt  : " + (thisY - fallAmt) + " ,fallAmt: " + fallAmt);
+                int fallCnt = deleteCount[i];
+                //Debug.Log("  thisY - fallAmt  : " + (thisY - fallCnt) + " ,fallAmt: " + fallCnt);
                 
-                cubes[i, thisY - fallAmt].InitCubeData(); //i,3
-                cubes[i, thisY - fallAmt].generateCube.transform.localPosition = cubePositions[i, thisY]; //thisY
-                cubes[i, thisY - fallAmt].generateCube.transform.GetChild(0).gameObject.SetActive(true);
+                cubes[i, thisY - fallCnt].InitCubeData(); //i,3
+                cubes[i, thisY - fallCnt].generateCube.transform.localPosition = cubePositions[i, thisY]; //thisY
+                cubes[i, thisY - fallCnt].generateCube.transform.GetChild(0).gameObject.SetActive(true);
+                
                 /* Animation によって小さくなったままの場合がある */
-                cubes[i, thisY - fallAmt].animeCube.gameObject.transform.localScale = new Vector3(4,1,1);
+                //ubes[i, thisY - fallCnt].animeCube.gameObject.transform.localScale = new Vector3(4,2,2);
 
-                cubes[i, thisY - fallAmt].CubeRandomDirction();
+                cubes[i, thisY - fallCnt].CubeRandomDirction();
                 
 
-                cubes[i, thisY - fallAmt].FallCube(cubePositions[i, thisY - fallAmt]);
-                cubes[i, thisY - fallAmt].isAnimeCubeAvailable = false;
+                cubes[i, thisY - fallCnt].FallCube(cubePositions[i, thisY - fallCnt]);
+                cubes[i, thisY - fallCnt].isAnimeCubeAvailable = false;
 
-                cubes[i, thisY - fallAmt].CubeCon.hasFall = true;
+                cubes[i, thisY - fallCnt].CubeCon.hasFall = true;
                 
-
             }
         }
-
-
 
         for (int i = 0; i < boardSizeX; i++) {
             for (int j = 0; j < boardSizeY; j++) {
@@ -466,62 +477,6 @@ public class Board : MonoBehaviour {
             }
         }
         
-    }
-
-
-    IEnumerator StartPlay() {
-        bool hasFall = false;
-        for (int i = 0; i < boardSizeX; i++) {
-            for (int j = 0; j < boardSizeY; j++) {
-                if (cubes[i, j].CubeCon.hasFall == true) {
-                    Debug.Log("hasFall == true!!!!!!!!!!!!!!!!!");
-                    hasFall = true;
-                    break;
-                }
-            }
-        }
-        while (!hasFall) {
-            // 待機
-            yield return new WaitForEndOfFrame();
-        }
-        bool k = CanDeleteAndSearch(boardSizeX, boardSizeY);
-        if (k) {
-            Debug.Log("-------------k-------------");
-            GameManeger.gameState = GameState.plane;
-
-            DeleteStackedCube();
-            InitIsCheckedCube(boardSizeX, boardSizeY);
-            Fall();
-
-            AllisAnimeCubeAvailableAndisCheckedCubeInit();
-        } else {
-            GameManeger.gameState = GameState.plane;
-        }
-    }
-    IEnumerator Corou1() {
-        //Debug.Log("スタート");
-        yield return new WaitForSeconds(2.0f);
-
-
-        
-    }
-    IEnumerator coRoutine() {
-        bool hasFall = false;
-        for (int i = 0; i < boardSizeX; i++) {
-            for (int j = 0; j < boardSizeY; j++) {
-                if (cubes[i, j].CubeCon.hasFall == true) {
-                    hasFall = true;
-                    break;
-                }
-            }
-
-        }
-        if (hasFall == false) {
-            Debug.Log("hasFall become false!!");
-            yield break;
-        }
-        yield return new WaitForSeconds(10f); // num秒待機
-
     }
 
     public void PrintColor() {

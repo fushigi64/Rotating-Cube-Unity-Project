@@ -14,14 +14,34 @@ public class Logics {
         
         float x = GameManeger.min.x + (GameManeger.one + GameManeger.two * i);
         float d = GameManeger.max.y - GameManeger.max.x;
+        //d = 0.3f;
         float y = d + GameManeger.min.y + (GameManeger.one + GameManeger.two * j);
-         
+        
         return new Vector3(x, y, 0);
     }
 
     public static void ArrayInit(int[] array,int initData) {
+
         for (int i=0;i<array.Length;i++) {
             array[i] = initData;
+        }
+    }
+    public static Direction JudgeDirectionX(float diff) {
+        if (diff > 0) {
+            return Direction.Right;
+        } else if (diff < 0) {
+            return Direction.Left;
+        } else {
+            return Direction.None;
+        }
+    }
+    public static Direction JudgeDirectionY(float diff) {
+        if (diff > 0) {
+            return Direction.Up;
+        } else if (diff < 0) {
+            return Direction.Down;
+        } else {
+            return Direction.None;
         }
     }
 

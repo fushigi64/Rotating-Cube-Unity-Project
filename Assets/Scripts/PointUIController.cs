@@ -28,7 +28,6 @@ public class PointUIController : MonoBehaviour {
     } 
     */
 
-
     public void Anime() {
         pointText.text = Board.points.ToString();
         GetComponent<Animator>().Play("PointAnimation");
